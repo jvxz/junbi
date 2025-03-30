@@ -1,12 +1,23 @@
 {
   "name": "junbi",
   "type": "module",
+  "version": "1.0.0",
   "description": "opinionated eslint config initializer",
   "author": "jamie <jamie@wisp.bio> (https://github.com/jvxz)",
   "license": "MIT",
-  "module": "bin/index.ts",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jvxz/junbi.git"
+  },
+  "main": "./dist/index.js",
   "bin": {
-    "junbi": "bin/index.ts"
+    "junbi": "./dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup bin/index.ts --format esm --dts --clean"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
@@ -24,6 +35,8 @@
     "@next/eslint-plugin-next": "^15.2.4",
     "@types/bun": "latest",
     "eslint": "^9.23.0",
-    "eslint-plugin-readable-tailwind": "^2.0.0"
+    "eslint-plugin-readable-tailwind": "^2.0.0",
+    "tsup": "^8.2.0",
+    "typescript": "^5.0.0"
   }
 }
