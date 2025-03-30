@@ -1,10 +1,10 @@
 {
   "name": "junbi",
   "type": "module",
-  "description": "jamie's preferred way to architect projects.",
+  "description": "opinionated eslint config initializer",
   "author": "jamie <jamie@wisp.bio> (https://github.com/jvxz)",
   "license": "MIT",
-  "module": "index.ts",
+  "module": "bin/index.ts",
   "bin": {
     "junbi": "bin/index.ts"
   },
