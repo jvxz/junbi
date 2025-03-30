@@ -2,7 +2,7 @@
 
 [![code style](https://antfu.me/badge-code-style.svg)](https://github.com/antfu/eslint-config)
 
-opinionated eslint config initializer, offering an edited version of [`@antfu/eslint-config`](https://github.com/antfu/eslint-config)
+my personal eslint config initializer, offering an edited version of [`@antfu/eslint-config`](https://github.com/antfu/eslint-config)
 
 ## usage
 
