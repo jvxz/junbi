@@ -2,12 +2,17 @@
 import type { FrameworkOption, ToolOption } from '../lib/types'
 import fs from 'node:fs/promises'
 import { detect } from '@antfu/ni'
-import { cancel, confirm, intro, isCancel, multiselect, outro, select, spinner } from '@clack/prompts'
+import { cancel, confirm, intro, isCancel, multiselect, outro, select, tasks } from '@clack/prompts'
+import cac from 'cac'
 import chalk from 'chalk'
 import { Effect } from 'effect'
 import { execa } from 'execa'
-import prettier from 'prettier'
 import { baseRules, nextjsRules, reactRules, tailwindRules } from '../lib/config-rules/index.ts'
+
+class InvalidArgsError {
+  readonly _tag = 'InvalidArgsError'
+  readonly description = 'invalid arguments. vanilla config cannot be used with react, next, or tailwind'
+}
 
 class ConfigCheckError {
   readonly _tag = 'ConfigCheckError'
@@ -44,9 +49,22 @@ class PackageManagerDetectionError {
   readonly description = 'a fatal error occurred while detecting the package manager. are you in a node project?'
 }
 
-function program() {
+function program(args: unknown) {
   return Effect.gen(function* (_) {
     intro(chalk.bold.magentaBright.inverse(' junbi '))
+
+    const { overwrite, installDeps, react, vanilla, next, tailwind } = yield* _(Effect.succeed(JSON.parse(JSON.stringify(args)) as {
+      overwrite: boolean | undefined
+      installDeps: boolean | undefined
+      react: boolean | undefined
+      vanilla: boolean | undefined
+      next: boolean | undefined
+      tailwind: boolean | undefined
+    }))
+
+    if (vanilla && (react || next || tailwind)) yield* _(Effect.fail(new InvalidArgsError()))
+
+    // if (!react && (next || tailwind)) log.warn('next or tailwind were specified, but react was not. react rules will be added to the config')
 
     const packageManager = yield* _(Effect.tryPromise({
       try: async () => {
@@ -66,7 +84,7 @@ function program() {
       catch: () => new ConfigCheckError(),
     }))
 
-    if (existingConfigFileName) {
+    if (existingConfigFileName && !overwrite) {
       const proceedToOverwrite = yield* _(Effect.tryPromise({
         try: async () => confirm({
           message: 'eslint config already exists. proceed to overwrite?',
@@ -79,28 +97,49 @@ function program() {
       if (!proceedToOverwrite) return handleCancel()
     }
 
-    const framework = yield* _(Effect.tryPromise({
-      try: async () => select({
-        message: 'what are you using?',
-        options: [
-          {
-            value: 'react',
-            label: 'react',
-          },
-          {
-            value: 'vanilla',
-            label: 'vanilla',
-          },
-        ],
-      }),
-      catch: () => new EnvironmentSelectionError(),
-    }))
+    let framework: symbol | FrameworkOption
+
+    if (vanilla) {
+      framework = 'vanilla'
+    }
+    else if (react) {
+      framework = 'react'
+    }
+    else if (next || tailwind) {
+      framework = 'react'
+    }
+    else {
+      framework = yield* _(Effect.tryPromise({
+        try: async () => select({
+          message: 'what are you using?',
+          options: [
+            {
+              value: 'react',
+              label: 'react',
+            },
+            {
+              value: 'vanilla',
+              label: 'vanilla',
+            },
+          ],
+        }),
+        catch: () => new EnvironmentSelectionError(),
+      }))
+    }
 
     if (isCancel(framework)) return handleCancel()
 
     let tools: symbol | ToolOption[] = []
 
-    if (framework === 'react') {
+    if (tailwind) {
+      tools.push('eslint-plugin-readable-tailwind')
+    }
+
+    if (next) {
+      tools.push('@next/eslint-plugin-next')
+    }
+
+    if (framework === 'react' && (!tailwind && !next)) {
       tools = yield* _(Effect.tryPromise({
         try: async () => multiselect({
           message: 'select your tools:',
@@ -122,7 +161,10 @@ function program() {
       if (isCancel(tools)) return handleCancel()
     }
 
-    const shouldInstallDeps = yield* _(Effect.tryPromise({
+    let shouldInstallDeps: symbol | boolean = false
+    if (installDeps) shouldInstallDeps = true
+
+    shouldInstallDeps = yield* _(Effect.tryPromise({
       try: async () => confirm({
         message: 'install dependencies?',
       }),
@@ -131,39 +173,45 @@ function program() {
 
     if (isCancel(shouldInstallDeps)) return handleCancel()
 
-    const s = spinner()
-
     if (shouldInstallDeps) {
-      s.start(`installing dependencies... (using \`${packageManager}\`)`)
       yield* _(Effect.tryPromise({
-        try: async () => execa(packageManager, ['install', '-D', 'eslint', '@antfu/eslint-config', ...tools]),
+        try: async () => tasks([
+          {
+            title: `installing dependencies... (using ${packageManager})`,
+            task: async () => {
+              await execa(packageManager, ['install', '-D', 'eslint', '@antfu/eslint-config', ...tools])
+              return 'dependencies installed'
+            },
+          },
+        ]),
         catch: () => new DepInstallError(),
       }))
-      s.stop('dependencies installed')
     }
-
-    s.start('writing eslint config..')
 
     yield* _(Effect.tryPromise({
       try: async () => {
-        const configContent = await getConfigContent(framework, tools)
+        await tasks([
+          {
+            title: 'writing eslint config...',
+            task: async () => {
+              const configContent = await getConfigContent(framework, tools)
 
-        if (existingConfigFileName) await fs.writeFile(existingConfigFileName, configContent)
-        else await fs.writeFile('eslint.config.mjs', configContent)
+              if (existingConfigFileName) await fs.writeFile(existingConfigFileName, configContent)
+              else await fs.writeFile('eslint.config.mjs', configContent)
+
+              await execa('eslint', ['--fix', existingConfigFileName ?? 'eslint.config.mjs'])
+
+              return 'eslint config written'
+            },
+          },
+        ])
       },
       catch: () => new ConfigWriteError(),
     }))
 
-    s.stop(`eslint config written (${chalk.underline('you may need to restart your eslint server in your ide')})`)
-
-    outro('done! ✨')
+    outro(`done! ✨ (${chalk.underline('you may need to restart your eslint server in your ide')})`)
   })
 }
-
-void Effect.runPromise(program().pipe(Effect.catchAll((err) => {
-  cancel(err.description)
-  return Effect.fail(err)
-})))
 
 async function getConfigContent(
   framework: FrameworkOption,
@@ -191,42 +239,58 @@ async function getConfigContent(
     ${baseRules}
   `
 
-  return prettier.format(
-    `
-    import antfu from '@antfu/eslint-config'
+  return `
+      import antfu from '@antfu/eslint-config'
 
-    export default antfu({
-      ${framework === 'react' ? 'react: true,' : ''}
-      typescript: {
-      tsconfigPath: './tsconfig.json',
-      overrides: {
-        'ts/no-floating-promises': 'error',
-        'ts/consistent-type-imports': 'error',
-        ${
-          framework === 'react'
-            ? '\'react/no-leaked-conditional-rendering\': \'error\','
-            : ''
-        }
-       },
-      },
-      ${pluginsString}
-        ignores: [
-      '**/node_modules/**',
-      '**/dist/**',
-      ${tools.includes('@next/eslint-plugin-next') ? '\'**/.next/**\'' : ''}
-    ],
+      export default antfu({
+        ${framework === 'react' ? 'react: true,' : ''}
+        typescript: {
+        tsconfigPath: './tsconfig.json',
+        overrides: {
+          'ts/no-floating-promises': 'error',
+          'ts/consistent-type-imports': 'error',
+          ${
+            framework === 'react'
+              ? '\'react/no-leaked-conditional-rendering\': \'error\','
+              : ''
+          }
+        },
+        },
+        ${pluginsString}
+          ignores: [
+        '**/node_modules/**',
+        '**/dist/**',
+        ${tools.includes('@next/eslint-plugin-next') ? '\'**/.next/**\'' : ''}
+      ],
 
-    rules: ${rulesString}
-    
-  })
-  `.trim(),
-    {
-      parser: 'babel',
-    },
-  )
+      rules: {${rulesString}}
+      
+    })
+    `.trim()
 }
 
 function handleCancel() {
   cancel('aborting..')
   process.exit(1)
 }
+
+const cli = cac('junbi')
+
+cli
+  .command('', 'run initialization wizard')
+  .option('-o, --overwrite', 'automatically overwrite existing config')
+  .option('-i, --install-deps', 'automatically install dependencies')
+  .option('-r, --react', 'generate config with react rules')
+  .option('-v, --vanilla', 'generate config with vanilla rules')
+  .option('-n, --next', 'generate config with next.js rules')
+  .option('-t, --tailwind', 'generate config with tailwind rules')
+  .action(async (args) => {
+    await Effect.runPromise(program(args).pipe(Effect.catchAll((err) => {
+      cancel(err.description)
+      return Effect.fail(err)
+    })))
+  })
+
+cli.help()
+
+cli.parse()
