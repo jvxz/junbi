@@ -1,4 +1,6 @@
-export const baseRules = JSON.stringify({
+import { formatRules } from '../utils/format-rules.ts'
+
+export const baseRules = formatRules({
   'style/quotes': ['error', 'single'],
   'antfu/if-newline': 'off',
   'node/prefer-global/process': 'off',

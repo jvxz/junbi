@@ -1,4 +1,6 @@
-export const reactRules = JSON.stringify({
+import { formatRules } from '../utils/format-rules.ts'
+
+export const reactRules = formatRules({
   'style/jsx-quotes': ['error', 'prefer-double'],
   'react/no-duplicate-jsx-props': 'error',
   'style/jsx-closing-bracket-location': [1, 'line-aligned'],
