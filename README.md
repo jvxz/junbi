@@ -26,6 +26,10 @@ if you are looking to customize the config, it is simply a matter of following t
 
 due to the opinionated nature of junbi, it ditches the concept of using formatters, including [prettier](https://prettier.io/). instead, it uses [eslint stylistic](https://eslint.style/) to format code. as a side effect of this, you may experience more errors than usual. to mitigate these errors, check out the settings configs offered by [`@antfu/eslint-config`](https://github.com/antfu/eslint-config#ide-support-auto-fix-on-save)
 
+## philosophy
+
+i have found myself frequently beginning many new projects & being uncomfortable without having my main formatting & linting. i made this package to mostly assist myself in initiating my config
+
 <!-- ### libraries
 
 - [@clack/prompts](https://github.com/clack/prompts)
