@@ -5,6 +5,11 @@ import chalk from 'chalk'
 import { Effect } from 'effect'
 import { execa } from 'execa'
 
+class ConfigCheckError {
+  readonly _tag = 'ConfigCheckError'
+  readonly description = 'a fatal error occurred while checking for the eslint config'
+}
+
 class EnvironmentSelectionError {
   readonly _tag = 'EnvironmentSelectionError'
   readonly description = 'a fatal error occurred while selecting an environment'
@@ -25,14 +30,40 @@ class ConfigWriteError {
   readonly description = 'a fatal error occurred while writing the eslint config'
 }
 
+class ConfigOverwriteError {
+  readonly _tag = 'ConfigOverwriteError'
+  readonly description = 'a fatal error occurred while overwriting the eslint config'
+}
+
 function handleCancel() {
-  cancel('aborting...')
+  cancel('Aborting...')
   process.exit(1)
 }
 
 function program() {
   return Effect.gen(function* (_) {
     intro(chalk.bold.magentaBright.inverse(' junbi '))
+
+    const existingConfig = yield* _(Effect.tryPromise({
+      try: async () => {
+        const files = await fs.readdir(process.cwd())
+        return files.find(file => file.includes('eslint'))
+      },
+      catch: () => new ConfigCheckError(),
+    }))
+
+    if (existingConfig) {
+      const proceedToOverwrite = yield* _(Effect.tryPromise({
+        try: async () => confirm({
+          message: 'Eslint config already exists. Proceed to overwrite?',
+        }),
+        catch: () => new ConfigOverwriteError(),
+      }))
+
+      if (isCancel(proceedToOverwrite)) return handleCancel()
+
+      if (!proceedToOverwrite) return handleCancel()
+    }
 
     const framework = yield* _(Effect.tryPromise({
       try: async () => select({
@@ -100,7 +131,10 @@ function program() {
     s.start('Writing eslint config...')
 
     yield* _(Effect.tryPromise({
-      try: async () => fs.writeFile('eslint.config.mjs', ''),
+      try: async () => {
+        if (existingConfig) await fs.writeFile(existingConfig, '')
+        else await fs.writeFile('eslint.config.mjs', '')
+      },
       catch: () => new ConfigWriteError(),
     }))
 
