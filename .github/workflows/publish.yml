@@ -10,12 +10,21 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: checkout repo
+        uses: actions/checkout@v3
+
+      - name: setup bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: install deps
+        run: bun install --frozen-lockfile
+
+      - name: setup node
+        uses: actions/setup-node@v3
         with:
-          fetch-depth: 0
-      - uses: oven-sh/setup-bun@v2
-      - run: bun install --frozen-lockfile
-      - name: create release pull request or publish
+          node-version: 20.x
+
+      - name: make pr or publish
         id: changesets
         uses: changesets/action@v1
         with:
@@ -23,3 +32,4 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
