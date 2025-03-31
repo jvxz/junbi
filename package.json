@@ -1,5 +1,5 @@
 {
-  "name": "@jamii/junbi",
+  "name": "junbi",
   "type": "module",
   "version": "2.0.0",
   "description": "jamie's eslint config initializer",

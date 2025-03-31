@@ -1,12 +1,3 @@
-# junbi
-
-## 2.0.0
-### Major Changes
-
-- 1386be0: migrate to scoped package
-  
-  - users should now run `npx @jamii/junbi`
-
 ## 1.0.3
 ### Patch Changes
 
