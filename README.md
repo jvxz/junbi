@@ -7,7 +7,7 @@ my personal eslint config initializer, offering an edited version of [`@antfu/es
 ## usage
 
 ```bash
-npx @jvxz/junbi
+npx junbi
 
 # -o, --overwrite     automatically overwrite existing config
 # -i, --install-deps  automatically install dependencies
