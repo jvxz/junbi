@@ -217,17 +217,29 @@ async function getConfigContent(
   framework: FrameworkOption,
   tools: ToolOption[],
 ) {
+  let importsString = ''
+
+  if (tools.length > 0) {
+    importsString = `
+      ${tools.map((tool) => {
+        if (tool === '@next/eslint-plugin-next') return 'import nextPlugin from "@next/eslint-plugin-next"'
+        if (tool === 'eslint-plugin-readable-tailwind') return 'import tailwindPlugin from "eslint-plugin-readable-tailwind"'
+        return ''
+      }).join('\n')}
+    `
+  }
+
   let pluginsString = ''
 
-  if (pluginsString.length > 0) {
-    pluginsString = tools
+  if (tools.length > 0) {
+    pluginsString = `plugins: {${tools
       .map((tool) => {
-        if (tool === '@next/eslint-plugin-next') return 'next: true'
+        if (tool === '@next/eslint-plugin-next') return '"next": nextPlugin'
         if (tool === 'eslint-plugin-readable-tailwind')
-          return 'readableTailwind: true'
+          return '"tailwind": tailwindPlugin'
         return ''
       })
-      .join(',')
+      .join(',')}},`
   }
 
   const rulesString = `
@@ -241,6 +253,7 @@ async function getConfigContent(
 
   return `
       import antfu from '@antfu/eslint-config'
+      ${importsString}
 
       export default antfu({
         ${framework === 'react' ? 'react: true,' : ''}
