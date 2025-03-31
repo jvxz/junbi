@@ -10,6 +10,8 @@
     "url": "git+https://github.com/jvxz/junbi.git"
   },
   "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
   "bin": {
     "junbi": "./dist/index.js"
   },
@@ -17,7 +19,8 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsup bin/index.ts --format esm --dts --clean"
+    "build": "tsup bin/index.ts --format cjs,esm --dts",
+    "lint": "eslint . && tsc --noEmit"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
@@ -32,10 +35,9 @@
   },
   "devDependencies": {
     "@antfu/eslint-config": "^4.11.0",
-    "@next/eslint-plugin-next": "^15.2.4",
+    "@changesets/cli": "^2.28.1",
     "@types/bun": "latest",
     "eslint": "^9.23.0",
-    "eslint-plugin-readable-tailwind": "^2.0.0",
     "tsup": "^8.2.0",
     "typescript": "^5.0.0"
   }
