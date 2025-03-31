@@ -179,7 +179,10 @@ function program(args: unknown) {
           {
             title: `installing dependencies... (using ${packageManager})`,
             task: async () => {
-              await execa(packageManager, ['install', '-D', 'eslint', '@antfu/eslint-config', ...tools])
+              const packages: string[] = [...tools]
+              if (react) packages.push('@eslint-react/eslint-plugin eslint-plugin-react-refresh')
+
+              await execa(packageManager, ['install', '-D', 'eslint', '@antfu/eslint-config', ...packages])
               return 'dependencies installed'
             },
           },
@@ -199,7 +202,7 @@ function program(args: unknown) {
               if (existingConfigFileName) await fs.writeFile(existingConfigFileName, configContent)
               else await fs.writeFile('eslint.config.mjs', configContent)
 
-              await execa('eslint', ['--fix', existingConfigFileName ?? 'eslint.config.mjs'])
+              await execa('npx', ['eslint', existingConfigFileName ?? 'eslint.config.mjs', '--fix'])
 
               return 'eslint config written'
             },
