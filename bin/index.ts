@@ -2,7 +2,7 @@
 import type { FrameworkOption, ToolOption } from '../lib/types'
 import fs from 'node:fs/promises'
 import { detect } from '@antfu/ni'
-import { cancel, confirm, intro, isCancel, multiselect, outro, select, tasks } from '@clack/prompts'
+import { cancel, confirm, intro, isCancel, log, multiselect, outro, select, tasks } from '@clack/prompts'
 import cac from 'cac'
 import chalk from 'chalk'
 import { Effect } from 'effect'
@@ -192,27 +192,30 @@ function program(args: unknown) {
     }
 
     yield* _(Effect.tryPromise({
-      try: async () => {
-        await tasks([
-          {
-            title: 'writing eslint config...',
-            task: async () => {
-              const configContent = await getConfigContent(framework, tools)
+      try: async () => tasks([
+        {
+          title: 'writing eslint config...',
+          task: async () => {
+            const configContent = await getConfigContent(framework, tools)
 
-              if (existingConfigFileName) await fs.writeFile(existingConfigFileName, configContent)
-              else await fs.writeFile('eslint.config.mjs', configContent)
+            if (existingConfigFileName) await fs.writeFile(existingConfigFileName, configContent)
+            else await fs.writeFile('eslint.config.mjs', configContent)
 
-              await execa('npx', ['eslint', existingConfigFileName ?? 'eslint.config.mjs', '--fix'])
-
-              return 'eslint config written'
-            },
+            return 'eslint config written'
           },
-        ])
-      },
+        },
+      ]),
       catch: () => new ConfigWriteError(),
     }))
 
-    outro(`done! ✨ (${chalk.underline('you may need to restart your eslint server in your ide')})`)
+    log.info(`${chalk.bold('next steps:')}  
+
+  1. ${chalk.bold(`${packageManager} eslint --fix ${existingConfigFileName ?? 'eslint.config.mjs'}`)}
+  2. ${chalk.bold.underline('https://github.com/antfu/eslint-config#ide-support-auto-fix-on-save')}
+  3. restart the eslint server in your ide (optional)
+  
+for more information, visit ${chalk.bold.underline('https://github.com/jvxz/junbi')}`)
+    outro('done! ✨')
   })
 }
 
