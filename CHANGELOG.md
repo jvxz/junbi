@@ -1,5 +1,10 @@
 ## 1.0.2
 
+## 1.1.1
+### Patch Changes
+
+- fix publish
+
 ## 1.1.0
 ### Minor Changes
 
