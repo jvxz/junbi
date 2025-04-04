@@ -19,6 +19,7 @@
     "dist"
   ],
   "scripts": {
+    "prepublishOnly": "bun run build",
     "build": "tsup bin/index.ts --format cjs,esm --dts",
     "lint": "eslint . && tsc --noEmit",
     "release": "bun run build && changeset publish"
