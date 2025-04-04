@@ -40,6 +40,10 @@ export const baseRules = formatRules({
 
   'style/space-in-parens': ['error', 'never'],
   'style/function-paren-newline': ['error', 'multiline'],
-
+    'arrow-body-style': ['warn', 'as-needed', {
+      requireReturnForObjectLiteral: true,
+    }],
+    'curly': ['warn', 'multi'],
+    'object-shorthand': ['warn', 'always'],
   'ts/strict-boolean-expressions': 'off',
 })
