@@ -1,7 +1,7 @@
 {
   "name": "junbi",
   "type": "module",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "description": "jamie's eslint config initializer",
   "author": "jamie <jamie@wisp.bio> (https://github.com/jvxz)",
   "license": "MIT",
