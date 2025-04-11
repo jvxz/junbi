@@ -52,6 +52,7 @@ export default antfu({
     }],
     'object-shorthand': ['warn', 'always'],
     'ts/strict-boolean-expressions': 'off',
+    'unicorn/throw-new-error': 'off',
   },
 
 })

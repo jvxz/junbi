@@ -45,4 +45,5 @@ export const baseRules = formatRules({
   }],
   'object-shorthand': ['warn', 'always'],
   'ts/strict-boolean-expressions': 'off',
+  'unicorn/throw-new-error': 'off',
 })
